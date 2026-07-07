@@ -18,9 +18,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Aspose.Total license (Aspose.Total.lic / Aspose.Email.lic) covers this package.
-         Bump the version below to match the Aspose.Total 24.10 release train. -->
+    <!-- Aspose.Total license (Aspose.Total.lic / Aspose.Email.lic) covers both packages below.
+         Bump the versions to match the Aspose.Total 24.10 release train.
+         Aspose.Words is required because Aspose.Email cannot render a MailMessage straight to
+         PDF; the conversion goes MSG -> MHTML (Aspose.Email) -> PDF (Aspose.Words). -->
     <PackageReference Include="Aspose.Email" Version="24.10.0" />
+    <PackageReference Include="Aspose.Words" Version="24.10.0" />
   </ItemGroup>
 
   <ItemGroup>

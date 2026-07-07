@@ -4,7 +4,9 @@ namespace AttachExtract.Services;
 
 /// <summary>
 /// Applies a licensed Aspose.Total / Aspose.Email .lic file at startup, if one can be found.
-/// The application still runs in evaluation mode when no license is present.
+/// The same file is used to license both Aspose.Email (MSG loading/attachments) and
+/// Aspose.Words (used internally to render the MHTML-to-PDF conversion). The application
+/// still runs in evaluation mode when no license is present.
 /// </summary>
 internal static class AsposeLicenseManager
 {
@@ -16,25 +18,37 @@ internal static class AsposeLicenseManager
 
     public static bool TryApplyLicense()
     {
-        foreach (string fileName in CandidateLicenseFileNames)
-        {
-            string candidatePath = Path.Combine(AppContext.BaseDirectory, fileName);
-            if (!File.Exists(candidatePath))
-            {
-                continue;
-            }
+        string? licensePath = CandidateLicenseFileNames
+            .Select(fileName => Path.Combine(AppContext.BaseDirectory, fileName))
+            .FirstOrDefault(File.Exists);
 
-            try
-            {
-                new License().SetLicense(candidatePath);
-                return true;
-            }
-            catch (Exception)
-            {
-                // Invalid or corrupt license file: continue in evaluation mode instead of crashing.
-            }
+        if (licensePath is null)
+        {
+            return false;
         }
 
-        return false;
+        bool applied = false;
+
+        try
+        {
+            new License().SetLicense(licensePath);
+            applied = true;
+        }
+        catch (Exception)
+        {
+            // Invalid or corrupt license file for Aspose.Email: continue in evaluation mode.
+        }
+
+        try
+        {
+            new Aspose.Words.License().SetLicense(licensePath);
+            applied = true;
+        }
+        catch (Exception)
+        {
+            // Invalid or corrupt license file for Aspose.Words: continue in evaluation mode.
+        }
+
+        return applied;
     }
 }

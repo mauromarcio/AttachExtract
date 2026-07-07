@@ -1,8 +1,9 @@
 # AttachExtract
 
 A Windows Forms (.NET 9) utility that bulk-converts Outlook `.msg` files to
-PDF and/or extracts their attachments, using Aspose.Email (part of
-Aspose.Total), with multithreaded processing and live progress reporting.
+PDF and/or extracts their attachments, using Aspose.Email and Aspose.Words
+(both part of Aspose.Total), with multithreaded processing and live progress
+reporting.
 
 ## Requirements
 
@@ -16,7 +17,8 @@ Aspose.Total), with multithreaded processing and live progress reporting.
 
 1. Open `AttachExtract.sln` in Visual Studio 2022.
 2. Restore NuGet packages (Visual Studio does this automatically on build;
-   it pulls `Aspose.Email` 24.10.x, which your Aspose.Total license covers).
+   it pulls `Aspose.Email` and `Aspose.Words` 24.10.x, both covered by your
+   Aspose.Total license).
 3. Optional: copy your licensed `Aspose.Total.lic` (or `Aspose.Email.lic`)
    file into the `AttachExtract` project folder, next to `AttachExtract.csproj`.
    The build copies it to the output folder automatically, and the app loads
@@ -77,7 +79,11 @@ See `Services/ExtractionLogWriter.cs`.
   `MaxDegreeOfParallelism` and a `CancellationToken`. Output file names are
   reserved through a `ConcurrentDictionary` so concurrent workers never race
   on the same destination path (PDF vs. attachments included).
-- PDF rendering uses `MailMessage.Save(path, SaveOptions.DefaultPdf)`.
+- PDF rendering: Aspose.Email cannot save a `MailMessage` directly to PDF, so
+  the message is first saved to an in-memory MHTML stream
+  (`MailMessage.Save(stream, SaveOptions.DefaultMhtml)`), then Aspose.Words
+  loads that stream (`LoadFormat.Mhtml`) and saves it as PDF
+  (`Document.Save(path, new PdfSaveOptions())`).
 - `MainForm` reports progress via `Progress<T>`, which automatically marshals
   callbacks back onto the UI thread — no manual `Invoke`/`BeginInvoke` needed,
   and no cross-thread control access. The same progress callback also

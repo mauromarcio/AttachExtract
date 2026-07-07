@@ -5,9 +5,10 @@ using AttachExtract.Models;
 namespace AttachExtract.Services;
 
 /// <summary>
-/// Loads MSG files with Aspose.Email, renders them to PDF and/or saves their attachments to
-/// disk. Safe to drive from multiple threads: each MSG file is processed independently and
-/// output file names are reserved through a thread-safe registry to avoid collisions.
+/// Loads MSG files with Aspose.Email, renders them to PDF via Aspose.Words (through an
+/// intermediate MHTML stream) and/or saves their attachments to disk. Safe to drive from
+/// multiple threads: each MSG file is processed independently and output file names are
+/// reserved through a thread-safe registry to avoid collisions.
 /// </summary>
 public sealed class MsgAttachmentExtractor
 {
@@ -80,8 +81,18 @@ public sealed class MsgAttachmentExtractor
 
             // Render the MSG itself to PDF. Named after the MSG file so it can always be
             // traced back to its source e-mail, just like the extracted attachments below.
+            // Aspose.Email cannot save a MailMessage straight to PDF, so the message is first
+            // saved to MHTML in memory, then Aspose.Words renders that MHTML to PDF.
             string pdfPath = ReserveUniquePath(Path.Combine(destinationFolder, $"{baseName}.pdf"), reservedPaths);
-            message.Save(pdfPath, SaveOptions.DefaultPdf);
+            using (var mhtmlStream = new MemoryStream())
+            {
+                message.Save(mhtmlStream, SaveOptions.DefaultMhtml);
+                mhtmlStream.Position = 0;
+
+                var mhtmlLoadOptions = new Aspose.Words.LoadOptions { LoadFormat = Aspose.Words.LoadFormat.Mhtml };
+                var wordsDocument = new Aspose.Words.Document(mhtmlStream, mhtmlLoadOptions);
+                wordsDocument.Save(pdfPath, new Aspose.Words.Saving.PdfSaveOptions());
+            }
             notes.Add("PDF created.");
             cancellationToken.ThrowIfCancellationRequested();
 
