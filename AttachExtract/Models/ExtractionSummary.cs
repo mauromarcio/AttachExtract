@@ -15,5 +15,6 @@ public sealed class ExtractionSummary
     public int TotalFiles => Results.Count;
     public int SuccessfulFiles => Results.Count(r => r.Succeeded);
     public int FailedFiles => Results.Count(r => !r.Succeeded);
+    public int TotalPdfsCreated => Results.Count(r => r.PdfCreated);
     public int TotalAttachmentsExtracted => Results.Sum(r => r.AttachmentsExtracted);
 }

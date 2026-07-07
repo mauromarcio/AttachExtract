@@ -19,7 +19,15 @@ public partial class MainForm : Form
             Environment.ProcessorCount,
             (int)numMaxParallelism.Minimum,
             (int)numMaxParallelism.Maximum);
+
+        // Default to the mode that preserves the original attachment-extraction behavior.
+        cmbProcessingMode.SelectedIndex = 1;
     }
+
+    private ProcessingMode SelectedProcessingMode =>
+        cmbProcessingMode.SelectedIndex == 0
+            ? ProcessingMode.PdfOnly
+            : ProcessingMode.PdfAndAttachments;
 
     private void btnBrowseSource_Click(object? sender, EventArgs e)
     {
@@ -127,16 +135,28 @@ public partial class MainForm : Form
         tsStatusLabel.Text = "Starting extraction…";
         SetProcessingState(true);
 
+        ProcessingMode mode = SelectedProcessingMode;
+        int maxDegreeOfParallelism = (int)numMaxParallelism.Value;
+        var collectedResults = new List<MsgProcessingResult>();
+
         _cancellationTokenSource = new CancellationTokenSource();
-        var progress = new Progress<FileProcessedEventArgs>(OnFileProcessed);
+        var progress = new Progress<FileProcessedEventArgs>(e =>
+        {
+            collectedResults.Add(e.Result);
+            OnFileProcessed(e);
+        });
+
+        DateTime startedAt = DateTime.Now;
         var stopwatch = Stopwatch.StartNew();
+        string runStatus = "Completed";
 
         try
         {
             ExtractionSummary summary = await _extractor.ExtractAllAsync(
                 msgFiles,
                 destinationFolder,
-                (int)numMaxParallelism.Value,
+                mode,
+                maxDegreeOfParallelism,
                 progress,
                 _cancellationTokenSource.Token);
 
@@ -144,20 +164,50 @@ public partial class MainForm : Form
             tsStatusLabel.Text =
                 $"Completed in {stopwatch.Elapsed:mm\\:ss}. " +
                 $"{summary.SuccessfulFiles} succeeded, {summary.FailedFiles} failed, " +
+                $"{summary.TotalPdfsCreated} PDF(s) created, " +
                 $"{summary.TotalAttachmentsExtracted} attachment(s) extracted.";
         }
         catch (OperationCanceledException)
         {
+            runStatus = "Cancelled by user";
             tsStatusLabel.Text = "Extraction cancelled by user.";
         }
         catch (Exception ex)
         {
+            runStatus = $"Failed: {ex.Message}";
             MessageBox.Show(this, $"An unexpected error occurred:\n{ex.Message}",
                 "Extraction error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             tsStatusLabel.Text = "Extraction failed.";
         }
         finally
         {
+            stopwatch.Stop();
+            DateTime finishedAt = DateTime.Now;
+
+            var runInfo = new ExtractionRunInfo
+            {
+                StartedAt = startedAt,
+                FinishedAt = finishedAt,
+                Duration = stopwatch.Elapsed,
+                RunStatus = runStatus,
+                SourceFolder = sourceFolder,
+                IncludeSubfolders = chkIncludeSubfolders.Checked,
+                DestinationFolder = destinationFolder,
+                ModeDescription = cmbProcessingMode.Text,
+                MaxDegreeOfParallelism = maxDegreeOfParallelism,
+                Results = collectedResults
+            };
+
+            try
+            {
+                string logPath = ExtractionLogWriter.WriteLog(runInfo);
+                tsStatusLabel.Text += $" Log saved: {Path.GetFileName(logPath)}";
+            }
+            catch (Exception ex)
+            {
+                tsStatusLabel.Text += $" (Could not write log file: {ex.Message})";
+            }
+
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
             SetProcessingState(false);
@@ -180,6 +230,7 @@ public partial class MainForm : Form
         int rowIndex = dgvResults.Rows.Add(
             result.MsgFileName,
             result.Succeeded ? "Success" : "Error",
+            result.PdfCreated ? "Yes" : "No",
             result.AttachmentsExtracted,
             result.Message);
 
@@ -204,6 +255,7 @@ public partial class MainForm : Form
         btnBrowseSource.Enabled = !isProcessing;
         btnBrowseDestination.Enabled = !isProcessing;
         chkIncludeSubfolders.Enabled = !isProcessing;
+        cmbProcessingMode.Enabled = !isProcessing;
         numMaxParallelism.Enabled = !isProcessing;
         btnStart.Enabled = !isProcessing;
         btnCancel.Enabled = isProcessing;

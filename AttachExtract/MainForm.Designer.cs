@@ -38,6 +38,8 @@ partial class MainForm
         this.btnBrowseDestination = new System.Windows.Forms.Button();
         this.txtDestinationFolder = new System.Windows.Forms.TextBox();
         this.lblDestinationFolder = new System.Windows.Forms.Label();
+        this.cmbProcessingMode = new System.Windows.Forms.ComboBox();
+        this.lblProcessingMode = new System.Windows.Forms.Label();
         this.chkIncludeSubfolders = new System.Windows.Forms.CheckBox();
         this.btnBrowseSource = new System.Windows.Forms.Button();
         this.txtSourceFolder = new System.Windows.Forms.TextBox();
@@ -45,6 +47,7 @@ partial class MainForm
         this.dgvResults = new System.Windows.Forms.DataGridView();
         this.colMsgFile = new System.Windows.Forms.DataGridViewTextBoxColumn();
         this.colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+        this.colPdf = new System.Windows.Forms.DataGridViewTextBoxColumn();
         this.colAttachments = new System.Windows.Forms.DataGridViewTextBoxColumn();
         this.colDetails = new System.Windows.Forms.DataGridViewTextBoxColumn();
         this.statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -79,7 +82,7 @@ partial class MainForm
         this.lblAppSubtitle.Name = "lblAppSubtitle";
         this.lblAppSubtitle.Size = new System.Drawing.Size(300, 17);
         this.lblAppSubtitle.TabIndex = 1;
-        this.lblAppSubtitle.Text = "Bulk attachment extractor for Outlook MSG files";
+        this.lblAppSubtitle.Text = "Bulk PDF conversion and attachment extraction for Outlook MSG files";
         //
         // lblAppTitle
         //
@@ -103,6 +106,8 @@ partial class MainForm
         this.optionsPanel.Controls.Add(this.btnBrowseDestination);
         this.optionsPanel.Controls.Add(this.txtDestinationFolder);
         this.optionsPanel.Controls.Add(this.lblDestinationFolder);
+        this.optionsPanel.Controls.Add(this.cmbProcessingMode);
+        this.optionsPanel.Controls.Add(this.lblProcessingMode);
         this.optionsPanel.Controls.Add(this.chkIncludeSubfolders);
         this.optionsPanel.Controls.Add(this.btnBrowseSource);
         this.optionsPanel.Controls.Add(this.txtSourceFolder);
@@ -110,7 +115,7 @@ partial class MainForm
         this.optionsPanel.Dock = System.Windows.Forms.DockStyle.Top;
         this.optionsPanel.Location = new System.Drawing.Point(0, 64);
         this.optionsPanel.Name = "optionsPanel";
-        this.optionsPanel.Size = new System.Drawing.Size(1024, 184);
+        this.optionsPanel.Size = new System.Drawing.Size(1024, 212);
         this.optionsPanel.TabIndex = 1;
         //
         // btnCancel
@@ -118,10 +123,10 @@ partial class MainForm
         this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
         this.btnCancel.Enabled = false;
         this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-        this.btnCancel.Location = new System.Drawing.Point(914, 132);
+        this.btnCancel.Location = new System.Drawing.Point(914, 159);
         this.btnCancel.Name = "btnCancel";
         this.btnCancel.Size = new System.Drawing.Size(90, 32);
-        this.btnCancel.TabIndex = 10;
+        this.btnCancel.TabIndex = 12;
         this.btnCancel.Text = "Cancel";
         this.btnCancel.UseVisualStyleBackColor = true;
         this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -134,42 +139,42 @@ partial class MainForm
         this.btnStart.FlatAppearance.BorderSize = 0;
         this.btnStart.ForeColor = System.Drawing.Color.White;
         this.btnStart.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
-        this.btnStart.Location = new System.Drawing.Point(764, 132);
+        this.btnStart.Location = new System.Drawing.Point(764, 159);
         this.btnStart.Name = "btnStart";
         this.btnStart.Size = new System.Drawing.Size(140, 32);
-        this.btnStart.TabIndex = 9;
-        this.btnStart.Text = "Start Extraction";
+        this.btnStart.TabIndex = 11;
+        this.btnStart.Text = "Start Processing";
         this.btnStart.UseVisualStyleBackColor = false;
         this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
         //
         // numMaxParallelism
         //
         this.numMaxParallelism.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
-        this.numMaxParallelism.Location = new System.Drawing.Point(180, 135);
+        this.numMaxParallelism.Location = new System.Drawing.Point(180, 162);
         this.numMaxParallelism.Maximum = new decimal(new int[] { 64, 0, 0, 0 });
         this.numMaxParallelism.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
         this.numMaxParallelism.Name = "numMaxParallelism";
         this.numMaxParallelism.Size = new System.Drawing.Size(60, 23);
-        this.numMaxParallelism.TabIndex = 8;
+        this.numMaxParallelism.TabIndex = 10;
         this.numMaxParallelism.Value = new decimal(new int[] { 1, 0, 0, 0 });
         //
         // lblMaxParallelism
         //
         this.lblMaxParallelism.AutoSize = true;
-        this.lblMaxParallelism.Location = new System.Drawing.Point(20, 138);
+        this.lblMaxParallelism.Location = new System.Drawing.Point(20, 165);
         this.lblMaxParallelism.Name = "lblMaxParallelism";
         this.lblMaxParallelism.Size = new System.Drawing.Size(96, 15);
-        this.lblMaxParallelism.TabIndex = 7;
+        this.lblMaxParallelism.TabIndex = 9;
         this.lblMaxParallelism.Text = "Parallel workers:";
         //
         // btnBrowseDestination
         //
         this.btnBrowseDestination.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
         this.btnBrowseDestination.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-        this.btnBrowseDestination.Location = new System.Drawing.Point(914, 89);
+        this.btnBrowseDestination.Location = new System.Drawing.Point(914, 116);
         this.btnBrowseDestination.Name = "btnBrowseDestination";
         this.btnBrowseDestination.Size = new System.Drawing.Size(90, 25);
-        this.btnBrowseDestination.TabIndex = 6;
+        this.btnBrowseDestination.TabIndex = 8;
         this.btnBrowseDestination.Text = "Browse…";
         this.btnBrowseDestination.UseVisualStyleBackColor = true;
         this.btnBrowseDestination.Click += new System.EventHandler(this.btnBrowseDestination_Click);
@@ -178,20 +183,42 @@ partial class MainForm
         //
         this.txtDestinationFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
-        this.txtDestinationFolder.Location = new System.Drawing.Point(180, 90);
+        this.txtDestinationFolder.Location = new System.Drawing.Point(180, 117);
         this.txtDestinationFolder.Name = "txtDestinationFolder";
         this.txtDestinationFolder.ReadOnly = true;
         this.txtDestinationFolder.Size = new System.Drawing.Size(724, 23);
-        this.txtDestinationFolder.TabIndex = 5;
+        this.txtDestinationFolder.TabIndex = 7;
         //
         // lblDestinationFolder
         //
         this.lblDestinationFolder.AutoSize = true;
-        this.lblDestinationFolder.Location = new System.Drawing.Point(20, 93);
+        this.lblDestinationFolder.Location = new System.Drawing.Point(20, 120);
         this.lblDestinationFolder.Name = "lblDestinationFolder";
         this.lblDestinationFolder.Size = new System.Drawing.Size(105, 15);
-        this.lblDestinationFolder.TabIndex = 4;
+        this.lblDestinationFolder.TabIndex = 6;
         this.lblDestinationFolder.Text = "Destination folder:";
+        //
+        // cmbProcessingMode
+        //
+        this.cmbProcessingMode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
+        this.cmbProcessingMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+        this.cmbProcessingMode.FormattingEnabled = true;
+        this.cmbProcessingMode.Items.AddRange(new object[] {
+            "Only create PDF from MSG files",
+            "Create PDF from MSG files while extracting the attachments"});
+        this.cmbProcessingMode.Location = new System.Drawing.Point(180, 83);
+        this.cmbProcessingMode.Name = "cmbProcessingMode";
+        this.cmbProcessingMode.Size = new System.Drawing.Size(460, 23);
+        this.cmbProcessingMode.TabIndex = 5;
+        //
+        // lblProcessingMode
+        //
+        this.lblProcessingMode.AutoSize = true;
+        this.lblProcessingMode.Location = new System.Drawing.Point(20, 86);
+        this.lblProcessingMode.Name = "lblProcessingMode";
+        this.lblProcessingMode.Size = new System.Drawing.Size(97, 15);
+        this.lblProcessingMode.TabIndex = 4;
+        this.lblProcessingMode.Text = "Processing mode:";
         //
         // chkIncludeSubfolders
         //
@@ -245,11 +272,12 @@ partial class MainForm
         this.dgvResults.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colMsgFile,
             this.colStatus,
+            this.colPdf,
             this.colAttachments,
             this.colDetails});
         this.dgvResults.Dock = System.Windows.Forms.DockStyle.Fill;
         this.dgvResults.EnableHeadersVisualStyles = false;
-        this.dgvResults.Location = new System.Drawing.Point(0, 248);
+        this.dgvResults.Location = new System.Drawing.Point(0, 276);
         this.dgvResults.MultiSelect = false;
         this.dgvResults.Name = "dgvResults";
         this.dgvResults.ReadOnly = true;
@@ -273,6 +301,13 @@ partial class MainForm
         this.colStatus.ReadOnly = true;
         this.colStatus.Width = 90;
         //
+        // colPdf
+        //
+        this.colPdf.HeaderText = "PDF";
+        this.colPdf.Name = "colPdf";
+        this.colPdf.ReadOnly = true;
+        this.colPdf.Width = 50;
+        //
         // colAttachments
         //
         this.colAttachments.HeaderText = "Attachments";
@@ -293,7 +328,7 @@ partial class MainForm
             this.tsProgressBar,
             this.tsStatusLabel,
             this.tsCountsLabel});
-        this.statusStrip1.Location = new System.Drawing.Point(0, 633);
+        this.statusStrip1.Location = new System.Drawing.Point(0, 661);
         this.statusStrip1.Name = "statusStrip1";
         this.statusStrip1.Size = new System.Drawing.Size(1024, 22);
         this.statusStrip1.TabIndex = 3;
@@ -322,13 +357,13 @@ partial class MainForm
         //
         this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-        this.ClientSize = new System.Drawing.Size(1024, 655);
+        this.ClientSize = new System.Drawing.Size(1024, 683);
         this.Controls.Add(this.dgvResults);
         this.Controls.Add(this.statusStrip1);
         this.Controls.Add(this.optionsPanel);
         this.Controls.Add(this.headerPanel);
         this.Font = new System.Drawing.Font("Segoe UI", 9F);
-        this.MinimumSize = new System.Drawing.Size(900, 620);
+        this.MinimumSize = new System.Drawing.Size(900, 648);
         this.Name = "MainForm";
         this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
         this.Text = "AttachExtract — Outlook MSG Attachment Extractor";
@@ -357,6 +392,8 @@ partial class MainForm
     private System.Windows.Forms.Button btnBrowseDestination;
     private System.Windows.Forms.TextBox txtDestinationFolder;
     private System.Windows.Forms.Label lblDestinationFolder;
+    private System.Windows.Forms.ComboBox cmbProcessingMode;
+    private System.Windows.Forms.Label lblProcessingMode;
     private System.Windows.Forms.CheckBox chkIncludeSubfolders;
     private System.Windows.Forms.Button btnBrowseSource;
     private System.Windows.Forms.TextBox txtSourceFolder;
@@ -364,6 +401,7 @@ partial class MainForm
     private System.Windows.Forms.DataGridView dgvResults;
     private System.Windows.Forms.DataGridViewTextBoxColumn colMsgFile;
     private System.Windows.Forms.DataGridViewTextBoxColumn colStatus;
+    private System.Windows.Forms.DataGridViewTextBoxColumn colPdf;
     private System.Windows.Forms.DataGridViewTextBoxColumn colAttachments;
     private System.Windows.Forms.DataGridViewTextBoxColumn colDetails;
     private System.Windows.Forms.StatusStrip statusStrip1;

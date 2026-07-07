@@ -5,8 +5,8 @@ using AttachExtract.Models;
 namespace AttachExtract.Services;
 
 /// <summary>
-/// Loads MSG files with Aspose.Email and saves their attachments to disk.
-/// Safe to drive from multiple threads: each MSG file is processed independently and
+/// Loads MSG files with Aspose.Email, renders them to PDF and/or saves their attachments to
+/// disk. Safe to drive from multiple threads: each MSG file is processed independently and
 /// output file names are reserved through a thread-safe registry to avoid collisions.
 /// </summary>
 public sealed class MsgAttachmentExtractor
@@ -14,16 +14,19 @@ public sealed class MsgAttachmentExtractor
     private const string FallbackExtension = ".dat";
 
     /// <summary>
-    /// Extracts attachments from every given MSG file in parallel.
+    /// Processes every given MSG file in parallel: renders it to PDF and/or extracts its
+    /// attachments, depending on <paramref name="mode"/>.
     /// </summary>
     /// <param name="msgFilePaths">Full paths of the .msg files to process.</param>
-    /// <param name="destinationFolder">Folder that will receive the extracted attachments.</param>
+    /// <param name="destinationFolder">Folder that will receive the PDFs and/or attachments.</param>
+    /// <param name="mode">Whether to only create a PDF, or create a PDF and extract attachments.</param>
     /// <param name="maxDegreeOfParallelism">Maximum number of MSG files processed at once.</param>
     /// <param name="progress">Reports one update per completed MSG file.</param>
     /// <param name="cancellationToken">Allows the caller to cancel an in-flight run.</param>
     public Task<ExtractionSummary> ExtractAllAsync(
         IReadOnlyList<string> msgFilePaths,
         string destinationFolder,
+        ProcessingMode mode,
         int maxDegreeOfParallelism,
         IProgress<FileProcessedEventArgs> progress,
         CancellationToken cancellationToken)
@@ -42,7 +45,7 @@ public sealed class MsgAttachmentExtractor
 
             Parallel.ForEach(msgFilePaths, parallelOptions, msgFilePath =>
             {
-                MsgProcessingResult result = ProcessSingleFile(msgFilePath, destinationFolder, reservedPaths, cancellationToken);
+                MsgProcessingResult result = ProcessSingleFile(msgFilePath, destinationFolder, mode, reservedPaths, cancellationToken);
                 results.Add(result);
 
                 int completedCount = Interlocked.Increment(ref completed);
@@ -61,6 +64,7 @@ public sealed class MsgAttachmentExtractor
     private static MsgProcessingResult ProcessSingleFile(
         string msgFilePath,
         string destinationFolder,
+        ProcessingMode mode,
         ConcurrentDictionary<string, byte> reservedPaths,
         CancellationToken cancellationToken)
     {
@@ -71,43 +75,57 @@ public sealed class MsgAttachmentExtractor
             using MailMessage message = MailMessage.Load(msgFilePath);
             cancellationToken.ThrowIfCancellationRequested();
 
-            int attachmentCount = message.Attachments.Count;
-            if (attachmentCount == 0)
+            int savedAttachments = 0;
+            var notes = new List<string>();
+
+            // Render the MSG itself to PDF. Named after the MSG file so it can always be
+            // traced back to its source e-mail, just like the extracted attachments below.
+            string pdfPath = ReserveUniquePath(Path.Combine(destinationFolder, $"{baseName}.pdf"), reservedPaths);
+            message.Save(pdfPath, SaveOptions.DefaultPdf);
+            notes.Add("PDF created.");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (mode == ProcessingMode.PdfAndAttachments)
             {
-                return MsgProcessingResult.Success(msgFilePath, 0, "No attachments found.");
-            }
-
-            int savedCount = 0;
-            for (int i = 0; i < attachmentCount; i++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                Attachment attachment = message.Attachments[i];
-
-                string extension = Path.GetExtension(attachment.Name);
-                if (string.IsNullOrWhiteSpace(extension))
+                int attachmentCount = message.Attachments.Count;
+                if (attachmentCount == 0)
                 {
-                    extension = FallbackExtension;
+                    notes.Add("No attachments found.");
                 }
+                else
+                {
+                    for (int i = 0; i < attachmentCount; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
 
-                // Attachments are named after the MSG file itself (not the attachment's own
-                // name) so the extracted files can always be traced back to their source e-mail.
-                // A -0001, -0002, ... suffix is only added once a MSG has more than one attachment.
-                string desiredFileName = attachmentCount == 1
-                    ? $"{baseName}{extension}"
-                    : $"{baseName}-{i + 1:D4}{extension}";
+                        Attachment attachment = message.Attachments[i];
 
-                string desiredPath = Path.Combine(destinationFolder, desiredFileName);
-                string targetPath = ReserveUniquePath(desiredPath, reservedPaths);
+                        string extension = Path.GetExtension(attachment.Name);
+                        if (string.IsNullOrWhiteSpace(extension))
+                        {
+                            extension = FallbackExtension;
+                        }
 
-                attachment.Save(targetPath);
-                savedCount++;
+                        // Attachments are named after the MSG file itself (not the attachment's
+                        // own name) so the extracted files can always be traced back to their
+                        // source e-mail. A -0001, -0002, ... suffix is only added once a MSG has
+                        // more than one attachment.
+                        string desiredFileName = attachmentCount == 1
+                            ? $"{baseName}{extension}"
+                            : $"{baseName}-{i + 1:D4}{extension}";
+
+                        string desiredPath = Path.Combine(destinationFolder, desiredFileName);
+                        string targetPath = ReserveUniquePath(desiredPath, reservedPaths);
+
+                        attachment.Save(targetPath);
+                        savedAttachments++;
+                    }
+
+                    notes.Add($"{savedAttachments} attachment(s) extracted.");
+                }
             }
 
-            return MsgProcessingResult.Success(
-                msgFilePath,
-                savedCount,
-                $"{savedCount} attachment(s) extracted.");
+            return MsgProcessingResult.Success(msgFilePath, pdfCreated: true, savedAttachments, string.Join(" ", notes));
         }
         catch (OperationCanceledException)
         {
