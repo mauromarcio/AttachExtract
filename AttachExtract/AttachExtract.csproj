@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>AttachExtract</RootNamespace>
+    <AssemblyName>AttachExtract</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Platforms>AnyCPU;x64</Platforms>
+
+    <!-- Modern, high-DPI aware WinForms rendering -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aspose.Total license (Aspose.Total.lic / Aspose.Email.lic) covers this package.
+         Bump the version below to match the Aspose.Total 24.10 release train. -->
+    <PackageReference Include="Aspose.Email" Version="24.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Drop a licensed .lic file next to the .csproj (kept out of source control, see .gitignore)
+         and it will be copied beside the executable so AsposeLicenseManager can find it at startup. -->
+    <None Include="Aspose.Total.lic" Condition="Exists('Aspose.Total.lic')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Aspose.Email.lic" Condition="Exists('Aspose.Email.lic')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
