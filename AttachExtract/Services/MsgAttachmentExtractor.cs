@@ -89,7 +89,7 @@ public sealed class MsgAttachmentExtractor
                 message.Save(mhtmlStream, SaveOptions.DefaultMhtml);
                 mhtmlStream.Position = 0;
 
-                var mhtmlLoadOptions = new Aspose.Words.LoadOptions { LoadFormat = Aspose.Words.LoadFormat.Mhtml };
+                var mhtmlLoadOptions = new Aspose.Words.Loading.LoadOptions { LoadFormat = Aspose.Words.Loading.LoadFormat.Mhtml };
                 var wordsDocument = new Aspose.Words.Document(mhtmlStream, mhtmlLoadOptions);
                 wordsDocument.Save(pdfPath, new Aspose.Words.Saving.PdfSaveOptions());
             }
